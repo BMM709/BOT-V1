@@ -1,0 +1,125 @@
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local LocalPlayer = Players.LocalPlayer
+
+-- Create ScreenGui
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "SpeedControlGui"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+
+-- Main Frame (กล่อง UI หลัก)
+local mainFrame = Instance.new("Frame")
+mainFrame.Name = "MainFrame"
+mainFrame.Size = UDim2.new(0, 220, 0, 150)
+mainFrame.Position = UDim2.new(0.5, -110, 0.4, -75)
+mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+mainFrame.BorderSizePixel = 0
+mainFrame.Parent = screenGui
+
+-- ใส่ขอบมนให้ UI
+local uiCorner = Instance.new("UICorner")
+uiCorner.CornerRadius = UDim.new(0, 10)
+uiCorner.Parent = mainFrame
+
+-- หัวข้อ (Title)
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Size = UDim2.new(1, 0, 0, 35)
+titleLabel.BackgroundTransparency = 1
+titleLabel.Text = "⚙️ ปรับ ความไว"
+titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+titleLabel.TextSize = 16
+titleLabel.Font = Enum.Font.SourceSansBold
+titleLabel.Parent = mainFrame
+
+-- ช่องกรอกค่าความไว (TextBox)
+local textBox = Instance.new("TextBox")
+textBox.Size = UDim2.new(0.8, 0, 0, 32)
+textBox.Position = UDim2.new(0.1, 0, 0.32, 0)
+textBox.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
+textBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+textBox.PlaceholderText = "ใส่ตัวเลขความไว..."
+textBox.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
+textBox.Text = ""
+textBox.TextSize = 14
+textBox.Font = Enum.Font.SourceSans
+textBox.Parent = mainFrame
+
+local boxCorner = Instance.new("UICorner")
+boxCorner.CornerRadius = UDim.new(0, 6)
+boxCorner.Parent = textBox
+
+-- ปุ่มยืนยัน (Confirm Button)
+local confirmBtn = Instance.new("TextButton")
+confirmBtn.Size = UDim2.new(0.8, 0, 0, 32)
+confirmBtn.Position = UDim2.new(0.1, 0, 0.65, 0)
+confirmBtn.BackgroundColor3 = Color3.fromRGB(0, 162, 255)
+confirmBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+confirmBtn.Text = "ยืนยัน"
+confirmBtn.TextSize = 16
+confirmBtn.Font = Enum.Font.SourceSansBold
+confirmBtn.Parent = mainFrame
+
+local btnCorner = Instance.new("UICorner")
+btnCorner.CornerRadius = UDim.new(0, 6)
+btnCorner.Parent = confirmBtn
+
+-------------------------------------------------------
+-- ระบบลาก UI (Drag System)
+-------------------------------------------------------
+local dragging = false
+local dragInput, dragStart, startPos
+
+local function update(input)
+    local delta = input.Position - dragStart
+    mainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+end
+
+mainFrame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = mainFrame.Position
+
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+mainFrame.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        update(input)
+    end
+end)
+
+-------------------------------------------------------
+-- ระบบปุ่มยืนยันการปรับความไวตัวละคร (WalkSpeed)
+-------------------------------------------------------
+confirmBtn.MouseButton1Click:Connect(function()
+    local speedValue = tonumber(textBox.Text)
+    
+    if speedValue then
+        local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+        local humanoid = character:FindFirstChildOfClass("Humanoid")
+        
+        if humanoid then
+            humanoid.WalkSpeed = speedValue
+            confirmBtn.Text = "สำเร็จ! (ความไว: " .. speedValue .. ")"
+            task.wait(1.5)
+            confirmBtn.Text = "ยืนยัน"
+        end
+    else
+        confirmBtn.Text = "❌ กรุณาใส่เฉพาะตัวเลข!"
+        task.wait(1.5)
+        confirmBtn.Text = "ยืนยัน"
+    end
+end)
